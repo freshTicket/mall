@@ -210,6 +210,10 @@ public class OmsPortalOrderServiceImpl implements OmsPortalOrderService {
             orderItem.setOrderSn(order.getOrderSn());
         }
         orderItemDao.insertList(orderItemList);
+
+        //将创建的订单信息放入延迟消息队列，当用户没有付款时取消订单（orderId应该在下单后生成）
+        sendDelayMessageCancelOrder(order.getId());
+
         //如使用优惠券更新优惠券使用状态
         if (orderParam.getCouponId() != null) {
             updateCouponStatus(orderParam.getCouponId(), currentMember.getId(), 1);
