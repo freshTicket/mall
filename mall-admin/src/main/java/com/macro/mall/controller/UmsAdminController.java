@@ -81,6 +81,24 @@ public class UmsAdminController {
     @ApiOperation(value = "获取当前登录用户信息")
     @RequestMapping(value = "/info", method = RequestMethod.GET)
     @ResponseBody
+    /**
+     * 当该次请求通过SpringSecurity鉴权后，可以直接从SecurityContext中获取当前认证用户(principal或authentication)
+     * 在@Controller 注解的bean里，principal可以直接作为方法参数，框架会自动赋值，本项目中采用的即是该方式。当然，也可以这么写：
+          public CommonResult getAdminInfo(Authentication authentication) {
+              String username = authentication.getName();
+          }
+     * 除此之外，还有以下几种方式：
+     *   （1）通过SecurityContextHolder类的静态方法手动获取
+              Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+              String username = authentication.getName();
+     *   （2）直接通过http request手动获取
+              public String currentUserNameSimple(HttpServletRequest request) {
+                Principal principal = request.getUserPrincipal();
+                String username = principal.getName();
+              }
+     * 其实principal也可以直接转换成userDetails，如下所示：
+          UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+     */
     public CommonResult getAdminInfo(Principal principal) {
         String username = principal.getName();
         UmsAdmin umsAdmin = adminService.getAdminByUsername(username);

@@ -49,6 +49,40 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     LOGGER.info("authenticated user:{}", username);
+                    /**
+                     * 此处需要理解SpringSecurity的鉴权机制
+                     * authentication只对单次请求有效
+                     * 即使是同一个用户，该次请求通过了鉴权，那么鉴权后，也只对当次请求放行，下一次请求仍然需要鉴权
+                     * 这是因为在每一次请求时，SecurityContextHolder.getContext()返回的SecurityContext对象并不是同一个对象
+                     * 查看源码，SecurityContextHolder中有这么一段代码
+                         public static void clearContext() {
+                             strategy.clearContext();
+                         }
+
+                         public static SecurityContext getContext() {
+                             return strategy.getContext();
+                         }
+                     --------------------------------------------------------------
+                     GlobalSecurityContextHolderStrategy实现类中，有下面一段代码：
+                        public void clearContext() {
+                            contextHolder = null;
+                        }
+
+                         public SecurityContext getContext() {
+                            if (contextHolder == null) {
+                                contextHolder = new SecurityContextImpl();  //每次都会new一个对象
+                            }
+                            return contextHolder;
+                         }
+                     ---------------------------------------------------------------
+                     * 此处推测，可能SecurityContextHolder并不是单例对象，每次请求都会new一个SecurityContextHolder实例，
+                     * 而每次实例化都会调用SecurityContextHolder.clearContext()方法，将GlobalSecurityContextHolderStrategy对象中的contextHolder置空
+                     * 导致contextHolder只能通过new()进行实例化
+                     * 这就导致每次请求的SecurityContextHolder.getContext().setAuthentication(authentication)只对当次请求有效，
+                     * 当次请求会被放行
+                     * 而下一次请求时，SecurityContextHolder.getContext().getAuthentication()并不能获取到authentication对象
+                     * 因此需要再次进行鉴权
+                     */
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
