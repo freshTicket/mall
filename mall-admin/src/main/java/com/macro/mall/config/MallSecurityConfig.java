@@ -31,6 +31,7 @@ public class MallSecurityConfig extends SecurityConfig {
     @Autowired
     private UmsResourceService resourceService;
 
+    //重写UserDetailsService中的loadUserByUsername()方法，供JwtAuthenticationTokenFilter内doFilterInternal()方法调用
     @Bean
     public UserDetailsService userDetailsService() {
         //获取登录用户信息
